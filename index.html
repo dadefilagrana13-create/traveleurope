@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TravelEurope — Gamified Travel Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>body{font-family:'Inter',sans-serif;} .badge{transition:all 0.2s;} .badge:hover{transform:scale(1.1);}</style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+<nav class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+  <div class="flex items-center gap-2">
+    <span class="text-2xl">🌍</span>
+    <span class="font-bold text-xl">TravelEurope</span>
+  </div>
+  <div class="flex items-center gap-4">
+    <span class="text-sm text-gray-400">🏆 <span id="total-points">0</span> pts</span>
+    <div class="flex gap-2">
+      <button onclick="showTab('explore')" class="tab-btn px-3 py-2 rounded-lg text-sm bg-blue-600 text-white" data-tab="explore">Explore</button>
+      <button onclick="showTab('badges')" class="tab-btn px-3 py-2 rounded-lg text-sm text-gray-400" data-tab="badges">Badges</button>
+      <button onclick="showTab('ai-guide')" class="tab-btn px-3 py-2 rounded-lg text-sm text-gray-400" data-tab="ai-guide">AI Guide</button>
+      <button onclick="showTab('checkin')" class="tab-btn px-3 py-2 rounded-lg text-sm text-gray-400" data-tab="checkin">Check-in</button>
+    </div>
+  </div>
+</nav>
+
+<!-- EXPLORE -->
+<div id="tab-explore" class="p-6">
+  <h1 class="text-2xl font-bold mb-2">Discover Europe 🗺️</h1>
+  <p class="text-gray-400 mb-6">Click a destination to explore and earn points.</p>
+  <div class="grid grid-cols-3 gap-4" id="destinations-grid"></div>
+</div>
+
+<!-- BADGES -->
+<div id="tab-badges" class="p-6 hidden">
+  <h1 class="text-2xl font-bold mb-2">Your Badges 🏅</h1>
+  <p class="text-gray-400 mb-6">Earn badges by visiting destinations and completing challenges.</p>
+  <div class="grid grid-cols-4 gap-4" id="badges-grid"></div>
+</div>
+
+<!-- AI GUIDE -->
+<div id="tab-ai-guide" class="p-6 hidden">
+  <h1 class="text-2xl font-bold mb-2">EURO — Your AI Travel Guide 🤖</h1>
+  <p class="text-gray-400 mb-6">Ask anything about traveling in Europe.</p>
+  <div id="chat-messages" class="bg-gray-900 border border-gray-800 rounded-xl p-4 h-80 overflow-y-auto mb-4 space-y-3">
+    <div class="bg-blue-900/50 rounded-lg p-3 text-sm max-w-md"><p class="font-medium text-blue-300 mb-1">EURO 🌍</p><p>Ciao! I'm EURO, your AI travel companion. Ask me anything about Europe — hidden gems, food, transport, costs, safety tips!</p></div>
+  </div>
+  <div class="flex gap-3">
+    <input id="chat-input" type="text" placeholder="Ask EURO anything..." class="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" onkeydown="if(event.key==='Enter')sendChat()" />
+    <button onclick="sendChat()" class="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-xl font-medium">Send</button>
+  </div>
+</div>
+
+<!-- CHECK-IN -->
+<div id="tab-checkin" class="p-6 hidden">
+  <h1 class="text-2xl font-bold mb-2">Check-in 📍</h1>
+  <p class="text-gray-400 mb-6">Log your visits and earn points!</p>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md">
+    <div class="space-y-4">
+      <div>
+        <label class="text-sm text-gray-400 block mb-1">Destination</label>
+        <select id="checkin-dest" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm">
+          <option value="">Select destination...</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 block mb-1">Your photo caption</label>
+        <input id="checkin-caption" type="text" placeholder="Describe your experience..." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm" />
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 block mb-1">Rating</label>
+        <select id="checkin-rating" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm">
+          <option value="5">⭐⭐⭐⭐⭐ Amazing!</option>
+          <option value="4">⭐⭐⭐⭐ Great</option>
+          <option value="3">⭐⭐⭐ Good</option>
+          <option value="2">⭐⭐ Meh</option>
+        </select>
+      </div>
+      <button onclick="doCheckin()" class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold">📍 Check In (+50 pts)</button>
+    </div>
+  </div>
+  <div class="mt-6">
+    <h3 class="font-semibold mb-3">Recent Check-ins</h3>
+    <div id="checkins-list" class="space-y-2"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://nmulrsbqdeqokvrybapn.supabase.co';
+const SUPABASE_KEY='%%SUPABASE_ANON_KEY%%';
+const GROQ_KEY='%%GROQ_KEY%%';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const DESTINATIONS=[
+  {name:'Rome',country:'Italy',emoji:'🏛️',desc:'The Eternal City',points:100,color:'bg-orange-900'},
+  {name:'Paris',country:'France',emoji:'🗼',desc:'City of Light',points:100,color:'bg-pink-900'},
+  {name:'Barcelona',country:'Spain',emoji:'🎨',desc:'Art & Architecture',points:90,color:'bg-red-900'},
+  {name:'Amsterdam',country:'Netherlands',emoji:'🌷',desc:'Canals & Culture',points:85,color:'bg-yellow-900'},
+  {name:'Prague',country:'Czech Republic',emoji:'🏰',desc:'City of a Hundred Spires',points:80,color:'bg-purple-900'},
+  {name:'Santorini',country:'Greece',emoji:'🌊',desc:'Island Paradise',points:120,color:'bg-blue-900'},
+  {name:'Vienna',country:'Austria',emoji:'🎼',desc:'Imperial Grandeur',points:85,color:'bg-green-900'},
+  {name:'Lisbon',country:'Portugal',emoji:'🎸',desc:'City of Seven Hills',points:80,color:'bg-teal-900'},
+  {name:'Dubrovnik',country:'Croatia',emoji:'🌅',desc:'Pearl of the Adriatic',points:90,color:'bg-cyan-900'},
+];
+
+const BADGES=[
+  {id:'first_visit',name:'First Step',emoji:'👣',desc:'Check in for the first time',req:1},
+  {id:'three_countries',name:'Explorer',emoji:'🗺️',desc:'Visit 3 different countries',req:3},
+  {id:'rome_visited',name:'Roman',emoji:'🏛️',desc:'Visit Rome',req:1},
+  {id:'paris_visited',name:'Parisian',emoji:'🗼',desc:'Visit Paris',req:1},
+  {id:'centurion',name:'Centurion',emoji:'💯',desc:'Earn 100 points',req:100},
+  {id:'traveler',name:'Traveler',emoji:'✈️',desc:'Visit 5 destinations',req:5},
+  {id:'photographer',name:'Photographer',emoji:'📸',desc:'Leave 3 photo captions',req:3},
+  {id:'euro_fan',name:'Euro Fan',emoji:'⭐',desc:'Rate 5 destinations',req:5},
+];
+
+let totalPoints=parseInt(localStorage.getItem('te_points')||'0');
+let visited=JSON.parse(localStorage.getItem('te_visited')||'[]');
+let earnedBadges=JSON.parse(localStorage.getItem('te_badges')||'[]');
+
+function showTab(tab){
+  document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(btn=>{btn.classList.remove('bg-blue-600','text-white');btn.classList.add('text-gray-400');});
+  const a=document.querySelector(`[data-tab="${tab}"]`);a.classList.add('bg-blue-600','text-white');a.classList.remove('text-gray-400');
+  if(tab==='checkin')loadCheckins();
+  if(tab==='badges')renderBadges();
+}
+
+function renderDestinations(){
+  document.getElementById('destinations-grid').innerHTML=DESTINATIONS.map(d=>`
+    <div class="badge ${d.color} border border-gray-700 rounded-xl p-5 cursor-pointer" onclick="exploreDestination('${d.name}')">
+      <div class="text-4xl mb-2">${d.emoji}</div>
+      <h3 class="font-bold">${d.name}</h3>
+      <p class="text-sm text-gray-300">${d.country}</p>
+      <p class="text-xs text-gray-400 mt-1">${d.desc}</p>
+      <div class="mt-3 flex justify-between items-center">
+        <span class="text-xs font-medium text-yellow-400">+${d.points} pts</span>
+        ${visited.includes(d.name)?'<span class="text-xs text-green-400">✅ Visited</span>':'<span class="text-xs text-gray-500">Not visited</span>'}
+      </div>
+    </div>`).join('');
+  const sel=document.getElementById('checkin-dest');
+  DESTINATIONS.forEach(d=>{const o=document.createElement('option');o.value=d.name;o.textContent=`${d.emoji} ${d.name}, ${d.country}`;sel.appendChild(o);});
+}
+
+function renderBadges(){
+  document.getElementById('badges-grid').innerHTML=BADGES.map(b=>{
+    const earned=earnedBadges.includes(b.id);
+    return`<div class="bg-gray-900 border ${earned?'border-yellow-500':'border-gray-800'} rounded-xl p-4 text-center">
+      <div class="text-4xl mb-2 ${earned?'':'opacity-30'}">${b.emoji}</div>
+      <p class="font-semibold text-sm ${earned?'text-yellow-400':'text-gray-500'}">${b.name}</p>
+      <p class="text-xs text-gray-500 mt-1">${b.desc}</p>
+      ${earned?'<span class="text-xs text-green-400 mt-2 block">✅ Earned!</span>':''}
+    </div>`;}).join('');
+}
+
+function exploreDestination(name){
+  const d=DESTINATIONS.find(x=>x.name===name);
+  alert(`${d.emoji} ${d.name}, ${d.country}\n\n${d.desc}\n\nPoints available: +${d.points}\n\nTip: Check in from the Check-in tab to earn points!`);
+}
+
+async function doCheckin(){
+  const dest=document.getElementById('checkin-dest').value;
+  const caption=document.getElementById('checkin-caption').value;
+  const rating=document.getElementById('checkin-rating').value;
+  if(!dest){alert('Select a destination!');return;}
+  const d=DESTINATIONS.find(x=>x.name===dest);
+  await sb.from('te_checkins').insert([{destination:dest,caption,rating:parseInt(rating),points:d.points}]);
+  if(!visited.includes(dest)){visited.push(dest);localStorage.setItem('te_visited',JSON.stringify(visited));}
+  totalPoints+=d.points;
+  localStorage.setItem('te_points',totalPoints);
+  document.getElementById('total-points').textContent=totalPoints;
+  checkBadges();
+  loadCheckins();
+  renderDestinations();
+  alert(`✅ Checked in at ${dest}! +${d.points} points earned!`);
+}
+
+function checkBadges(){
+  if(visited.length>=1&&!earnedBadges.includes('first_visit')){earnedBadges.push('first_visit');}
+  if(totalPoints>=100&&!earnedBadges.includes('centurion')){earnedBadges.push('centurion');}
+  if(visited.length>=5&&!earnedBadges.includes('traveler')){earnedBadges.push('traveler');}
+  if(visited.includes('Rome')&&!earnedBadges.includes('rome_visited')){earnedBadges.push('rome_visited');}
+  if(visited.includes('Paris')&&!earnedBadges.includes('paris_visited')){earnedBadges.push('paris_visited');}
+  localStorage.setItem('te_badges',JSON.stringify(earnedBadges));
+}
+
+async function loadCheckins(){
+  const{data}=await sb.from('te_checkins').select('*').order('created_at',{ascending:false}).limit(10);
+  document.getElementById('checkins-list').innerHTML=(data||[]).map(c=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex justify-between"><div><p class="font-medium text-sm">📍 ${c.destination}</p><p class="text-xs text-gray-400">${c.caption||'No caption'}</p></div><span class="text-yellow-400 text-sm font-bold">+${c.points}pts</span></div>`).join('')||'<p class="text-gray-500 text-sm">No check-ins yet.</p>';
+}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text)return;
+  const chat=document.getElementById('chat-messages');
+  chat.innerHTML+=`<div class="bg-gray-800 rounded-lg p-3 text-sm max-w-md ml-auto"><p>${text}</p></div>`;
+  input.value='';
+  chat.innerHTML+=`<div class="bg-blue-900/50 rounded-lg p-3 text-sm max-w-md"><p class="font-medium text-blue-300 mb-1">EURO 🌍</p><p class="text-gray-400 animate-pulse">Thinking...</p></div>`;
+  chat.scrollTop=chat.scrollHeight;
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':`Bearer ${GROQ_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:'You are EURO, a friendly and knowledgeable AI travel guide for Europe. Be enthusiastic, give practical tips, mention hidden gems. Keep responses concise (2-3 sentences max).'},{role:'user',content:text}],max_tokens:200})});
+  const data=await res.json();
+  const msgs=chat.querySelectorAll('.bg-blue-900\\/50');
+  const last=msgs[msgs.length-1];
+  last.innerHTML=`<p class="font-medium text-blue-300 mb-1">EURO 🌍</p><p>${data.choices[0].message.content}</p>`;
+  chat.scrollTop=chat.scrollHeight;
+}
+
+document.getElementById('total-points').textContent=totalPoints;
+renderDestinations();
+renderBadges();
+</script>
+</body>
+</html>
