@@ -2,318 +2,297 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TravelEurope — Gamified Travel Guide</title>
+<title>TravelEurope — Your Gamified Adventure</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-  body{font-family:'Inter',system-ui,sans-serif;background:#04080f;color:#e2e8f0}
-  .glass{background:rgba(255,255,255,.04);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08)}
-  .gradient-text{background:linear-gradient(135deg,#3b82f6,#06b6d4,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .btn{background:linear-gradient(135deg,#3b82f6,#06b6d4);border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-weight:700;color:white;transition:all .2s}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(59,130,246,.4)}
-  input,textarea,select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;color:#e2e8f0;width:100%}
-  input:focus,textarea:focus,select:focus{outline:none;border-color:#3b82f6}
-  .dest-card{background:linear-gradient(145deg,rgba(59,130,246,.07),rgba(6,182,212,.04));border:1px solid rgba(59,130,246,.2);border-radius:16px;padding:20px;transition:all .3s}
-  .dest-card:hover{border-color:rgba(59,130,246,.5);transform:translateY(-2px)}
-  .checkin-card{background:linear-gradient(145deg,rgba(16,185,129,.07),rgba(6,182,212,.04));border:1px solid rgba(16,185,129,.2);border-radius:14px;padding:16px;transition:all .3s}
-  .checkin-card:hover{border-color:rgba(16,185,129,.4)}
-  .tab-active{background:rgba(59,130,246,.2);border-bottom:2px solid #3b82f6}
-  .badge{background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,165,0,.1));border:1px solid rgba(255,215,0,.4);border-radius:12px;padding:12px 16px;text-align:center}
-  .xp-bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
-  .xp-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#06b6d4,#10b981);border-radius:4px;transition:width 1s}
-  .chat-msg-user{background:rgba(59,130,246,.2);border-radius:12px 12px 4px 12px;padding:10px 14px;max-width:80%;margin-left:auto}
-  .chat-msg-ai{background:rgba(255,255,255,.06);border-radius:12px 12px 12px 4px;padding:10px 14px;max-width:85%}
-  .star-badge{font-size:24px;cursor:default}
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;color:#111;font-family:'Inter',sans-serif}
+h1,h2,h3,.logo{font-family:'Syne',sans-serif}
+.hero{background:linear-gradient(135deg,#1e3a5f 0%,#0d6efd 50%,#0dcaf0 100%);min-height:320px;display:flex;align-items:center;padding:60px 48px;position:relative;overflow:hidden}
+.hero::after{content:'🌍🗼🏖️🏔️🍕🏛️';position:absolute;right:80px;top:50%;transform:translateY(-50%);font-size:80px;opacity:.15;letter-spacing:-10px;filter:blur(2px)}
+.hero-title{font-size:52px;font-weight:800;color:#fff;line-height:1.1;max-width:500px}
+.hero-sub{color:rgba(255,255,255,.75);font-size:17px;margin-top:14px;max-width:420px}
+.xp-bar-global{height:8px;background:rgba(255,255,255,.2);border-radius:4px;margin-top:20px;max-width:300px}
+.xp-fill-global{height:100%;background:#fff;border-radius:4px;transition:width 1s}
+.nav-tabs{display:flex;gap:0;border-bottom:2px solid #f0f0f0;margin-bottom:36px;background:#fff;padding:0 48px}
+.nav-tab{padding:16px 24px;font-weight:600;font-size:14px;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;font-family:'Inter',sans-serif}
+.nav-tab:hover{color:#0d6efd}
+.nav-tab.active{color:#0d6efd;border-bottom-color:#0d6efd}
+.main-content{padding:0 48px 60px}
+.panel{display:none}.panel.active{display:block}
+.dest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.dest-card{border-radius:16px;overflow:hidden;border:1px solid #eee;transition:all .25s;cursor:pointer}
+.dest-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.1)}
+.dest-thumb{height:160px;display:flex;align-items:center;justify-content:center;font-size:72px;position:relative}
+.dest-body{padding:16px}
+.xp-chip{position:absolute;top:10px;right:10px;background:#0d6efd;color:#fff;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.checkin-feed{display:flex;flex-direction:column;gap:14px}
+.checkin-item{background:#fff;border:1px solid #f0f0f0;border-radius:14px;padding:20px;display:flex;gap:16px;transition:all .2s}
+.checkin-item:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);border-color:#e0e0e0}
+.checkin-emoji{width:52px;height:52px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.badge-item{background:#f8f9fa;border-radius:12px;padding:16px;text-align:center;transition:all .2s}
+.badge-item.earned{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1px solid #ffc107}
+.badge-item:hover{transform:translateY(-2px)}
+.chat-area{height:360px;overflow-y:auto;border:1px solid #f0f0f0;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;background:#fafafa;margin-bottom:14px}
+.chat-bubble-user{background:#0d6efd;color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;max-width:70%;margin-left:auto;font-size:14px}
+.chat-bubble-ai{background:#fff;border:1px solid #eee;color:#111;padding:10px 14px;border-radius:14px 14px 14px 4px;max-width:80%;font-size:14px}
+.form-section{background:#f8f9fa;border-radius:16px;padding:28px;margin-bottom:28px;display:none}
+.form-section.open{display:block}
+label{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;margin-top:14px}
+input,select,textarea{border:1.5px solid #e8e8e8;border-radius:10px;padding:10px 14px;font-size:14px;width:100%;outline:none;transition:border .2s;font-family:'Inter',sans-serif;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:#0d6efd}
+.btn-blue{background:#0d6efd;color:#fff;border:none;padding:11px 22px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-blue:hover{background:#0b5ed7;transform:translateY(-1px)}
+.btn-outline-blue{background:transparent;border:1.5px solid #0d6efd;color:#0d6efd;padding:10px 20px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-outline-blue:hover{background:#f0f5ff}
+.passport-card{background:linear-gradient(135deg,#1e3a5f,#0d6efd);border-radius:20px;padding:32px;color:#fff;position:relative;overflow:hidden}
+.passport-card::after{content:'🛂';position:absolute;right:24px;top:24px;font-size:48px;opacity:.3}
 </style>
 </head>
 <body>
 
-<nav class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-xl">🌍</div>
-    <div><h1 class="font-black text-xl gradient-text">TravelEurope</h1><p class="text-xs text-slate-400">Gamified Travel Guide for Europe</p></div>
+<div class="hero">
+  <div>
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🌍 Europe Awaits</div>
+    <h1 class="hero-title">Travel, Explore,<br>Level Up.</h1>
+    <p class="hero-sub">Gamified travel guide for Europe. Check-in to destinations, earn XP, collect badges.</p>
+    <div style="margin-top:20px;display:flex;gap:10px;align-items:center">
+      <div style="color:rgba(255,255,255,.75);font-size:13px">Your XP: <strong style="color:#fff" id="hero-xp">0</strong></div>
+      <div class="xp-bar-global"><div class="xp-fill-global" id="hero-xp-bar" style="width:0%"></div></div>
+    </div>
   </div>
-  <div class="flex gap-2">
-    <button onclick="showTab('explore')" id="tab-explore" class="px-4 py-2 rounded-lg text-sm font-medium tab-active transition-all">🗺️ Explore</button>
-    <button onclick="showTab('checkin')" id="tab-checkin" class="px-4 py-2 rounded-lg text-sm font-medium transition-all">📍 Check-In</button>
-    <button onclick="showTab('passport')" id="tab-passport" class="px-4 py-2 rounded-lg text-sm font-medium transition-all">🏆 Passport</button>
-    <button onclick="showTab('euro')" id="tab-euro" class="px-4 py-2 rounded-lg text-sm font-medium transition-all">🤖 EURO AI</button>
-  </div>
-</nav>
+</div>
 
-<div class="max-w-6xl mx-auto px-6 py-8">
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showTab('explore')" id="tab-explore">🗺️ Explore</div>
+  <div class="nav-tab" onclick="showTab('checkin')" id="tab-checkin">📍 Check-In</div>
+  <div class="nav-tab" onclick="showTab('passport')" id="tab-passport">🏆 My Passport</div>
+  <div class="nav-tab" onclick="showTab('euro')" id="tab-euro">🤖 EURO Guide</div>
+</div>
 
-  <!-- EXPLORE -->
-  <div id="panel-explore">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h2 class="text-2xl font-bold">Discover Europe 🌍</h2>
-        <p class="text-slate-400 text-sm">Find hidden gems and iconic destinations</p>
-      </div>
-      <button onclick="toggleForm('dest-form')" class="btn"><i class="fas fa-plus mr-2"></i>Add Destination</button>
-    </div>
+<div class="main-content">
 
-    <!-- Add Destination Form -->
-    <div id="dest-form" class="hidden glass rounded-2xl p-6 mb-6">
-      <h3 class="font-semibold text-lg mb-4 gradient-text">New Destination</h3>
-      <div class="grid grid-cols-3 gap-4">
-        <div class="col-span-2"><label class="text-xs text-slate-400 mb-1 block">Destination Name *</label><input id="d-name" placeholder="e.g. Colosseum, Rome"></div>
-        <div><label class="text-xs text-slate-400 mb-1 block">Country</label><input id="d-country" placeholder="Italy"></div>
-        <div><label class="text-xs text-slate-400 mb-1 block">Category</label>
-          <select id="d-cat">
-            <option>Architecture & Landmarks</option><option>Nature & Outdoors</option><option>Food & Culture</option>
-            <option>Art & Museums</option><option>Beaches & Coasts</option><option>Nightlife</option><option>Hidden Gem</option>
-          </select>
-        </div>
-        <div><label class="text-xs text-slate-400 mb-1 block">Difficulty</label>
-          <select id="d-diff"><option>Easy</option><option>Medium</option><option>Hard</option><option>Expert</option></select>
-        </div>
-        <div><label class="text-xs text-slate-400 mb-1 block">XP Reward</label>
-          <select id="d-xp"><option value="25">25 XP — Quick visit</option><option value="50">50 XP — Half day</option><option value="100">100 XP — Full day</option><option value="200">200 XP — Epic destination</option></select>
-        </div>
-        <div class="col-span-3"><label class="text-xs text-slate-400 mb-1 block">Description & Tips</label>
-          <textarea id="d-desc" rows="2" placeholder="What makes this place special? Best time to visit, tips..."></textarea>
-        </div>
-      </div>
-      <div class="flex gap-3 mt-4">
-        <button onclick="saveDestination()" class="btn"><i class="fas fa-save mr-2"></i>Save</button>
-        <button onclick="generateDestination()" class="btn" style="background:linear-gradient(135deg,#10b981,#3b82f6)"><i class="fas fa-robot mr-2"></i>AI Suggest</button>
-        <button onclick="toggleForm('dest-form')" class="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors">Cancel</button>
+  <div id="panel-explore" class="panel active">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h2 style="font-size:24px;font-weight:800">Destinations</h2>
+      <div style="display:flex;gap:10px">
+        <select id="filter-cat" onchange="loadDests()" style="width:180px">
+          <option value="">All Categories</option>
+          <option>🏛️ Landmarks</option><option>🌿 Nature</option><option>🍕 Food</option><option>💎 Hidden Gem</option>
+        </select>
+        <button class="btn-blue" onclick="toggleEl('dest-form')">+ Add Place</button>
       </div>
     </div>
-
-    <!-- Filter -->
-    <div class="flex gap-3 mb-6">
-      <select id="filter-country" onchange="loadDestinations()" class="w-40">
-        <option value="">All Countries</option>
-        <option>Italy</option><option>France</option><option>Spain</option><option>Germany</option>
-        <option>Portugal</option><option>Greece</option><option>Netherlands</option><option>Croatia</option>
-      </select>
-      <select id="filter-cat" onchange="loadDestinations()" class="w-48">
-        <option value="">All Categories</option>
-        <option>Architecture & Landmarks</option><option>Nature & Outdoors</option><option>Food & Culture</option>
-        <option>Art & Museums</option><option>Hidden Gem</option>
-      </select>
+    <div class="form-section" id="dest-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div><label>Place Name *</label><input id="d-name" placeholder="Colosseum"></div>
+        <div><label>Country</label><input id="d-country" placeholder="Italy"></div>
+        <div><label>Category</label><select id="d-cat"><option>🏛️ Landmarks</option><option>🌿 Nature</option><option>🍕 Food</option><option>🎨 Art</option><option>🏖️ Beach</option><option>💎 Hidden Gem</option></select></div>
+        <div><label>XP Reward</label><select id="d-xp"><option value="25">25 XP</option><option value="50" selected>50 XP</option><option value="100">100 XP</option><option value="200">200 XP</option></select></div>
+        <div><label>Difficulty</label><select id="d-diff"><option>Easy</option><option>Medium</option><option>Hard</option></select></div>
+        <div><label>Emoji (for card)</label><input id="d-emoji" placeholder="🏛️" style="font-size:24px"></div>
+      </div>
+      <label>Tips & Description</label>
+      <textarea id="d-desc" rows="2" placeholder="Best time to visit, local tips..."></textarea>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button class="btn-blue" onclick="saveDest()">Save</button>
+        <button class="btn-outline-blue" onclick="toggleEl('dest-form')">Cancel</button>
+      </div>
     </div>
-
-    <div id="destinations-grid" class="grid grid-cols-3 gap-5"></div>
+    <div class="dest-grid" id="dests-grid"></div>
   </div>
 
-  <!-- CHECK-IN -->
-  <div id="panel-checkin" class="hidden">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h2 class="text-2xl font-bold">Check-In 📍</h2>
-        <p class="text-slate-400 text-sm">Mark places you've visited and earn XP</p>
-      </div>
-      <button onclick="toggleForm('checkin-form')" class="btn"><i class="fas fa-map-pin mr-2"></i>New Check-In</button>
+  <div id="panel-checkin" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h2 style="font-size:24px;font-weight:800">Check-In 📍</h2>
+      <button class="btn-blue" onclick="toggleEl('ci-form')">+ New Check-In</button>
     </div>
-
-    <div id="checkin-form" class="hidden glass rounded-2xl p-6 mb-6">
-      <div class="grid grid-cols-3 gap-4">
-        <div class="col-span-2"><label class="text-xs text-slate-400 mb-1 block">Destination / Place *</label><input id="ci-dest" placeholder="Where are you? e.g. Eiffel Tower, Paris"></div>
-        <div><label class="text-xs text-slate-400 mb-1 block">Country</label><input id="ci-country" placeholder="France"></div>
-        <div class="col-span-3"><label class="text-xs text-slate-400 mb-1 block">Caption / Your story</label>
-          <textarea id="ci-caption" rows="2" placeholder="What did you experience? Hidden gems, tips for other travelers..."></textarea>
-        </div>
-        <div><label class="text-xs text-slate-400 mb-1 block">Rating</label>
-          <select id="ci-rating"><option value="5">⭐⭐⭐⭐⭐ Amazing!</option><option value="4">⭐⭐⭐⭐ Great</option><option value="3">⭐⭐⭐ Good</option><option value="2">⭐⭐ OK</option><option value="1">⭐ Disappointing</option></select>
-        </div>
-        <div><label class="text-xs text-slate-400 mb-1 block">XP Points</label>
-          <select id="ci-xp"><option value="10">+10 XP</option><option value="25">+25 XP</option><option value="50">+50 XP</option><option value="100">+100 XP</option></select>
-        </div>
-        <div><label class="text-xs text-slate-400 mb-1 block">Badge Earned</label>
-          <select id="ci-badge"><option value="">No badge</option><option value="🏛️ Heritage Explorer">🏛️ Heritage Explorer</option><option value="🏖️ Beach Hopper">🏖️ Beach Hopper</option><option value="🍕 Food Tourist">🍕 Food Tourist</option><option value="🏔️ Mountain Conqueror">🏔️ Mountain Conqueror</option><option value="🌃 Night Owl">🌃 Night Owl</option><option value="💎 Hidden Gem Hunter">💎 Hidden Gem Hunter</option><option value="🗺️ Map Collector">🗺️ Map Collector</option></select>
-        </div>
+    <div class="form-section" id="ci-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div><label>Place *</label><input id="ci-dest" placeholder="Eiffel Tower, Paris"></div>
+        <div><label>Country</label><input id="ci-country" placeholder="France"></div>
+        <div><label>Rating</label><select id="ci-rating"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option></select></div>
+        <div><label>XP Earned</label><select id="ci-xp"><option value="10">+10 XP</option><option value="25">+25 XP</option><option value="50">+50 XP</option><option value="100">+100 XP</option></select></div>
+        <div><label>Badge</label><select id="ci-badge"><option value="">None</option><option value="🏛️ Heritage Explorer">🏛️ Heritage</option><option value="🏖️ Beach Hopper">🏖️ Beach</option><option value="🍕 Food Tourist">🍕 Food</option><option value="💎 Gem Hunter">💎 Hidden Gem</option><option value="🏔️ Mountain Conqueror">🏔️ Mountain</option></select></div>
       </div>
-      <div class="flex gap-3 mt-4">
-        <button onclick="saveCheckin()" class="btn"><i class="fas fa-check mr-2"></i>Check In!</button>
-        <button onclick="toggleForm('checkin-form')" class="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors">Cancel</button>
+      <label>Your Story</label>
+      <textarea id="ci-caption" rows="2" placeholder="What did you experience?"></textarea>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button class="btn-blue" onclick="saveCheckin()">Check In!</button>
+        <button class="btn-outline-blue" onclick="toggleEl('ci-form')">Cancel</button>
       </div>
     </div>
-
-    <div id="checkins-list" class="space-y-4"></div>
+    <div class="checkin-feed" id="checkins-feed"></div>
   </div>
 
-  <!-- PASSPORT / PROFILE -->
-  <div id="panel-passport" class="hidden">
-    <h2 class="text-2xl font-bold mb-6">🏆 My Travel Passport</h2>
-    <div class="grid grid-cols-3 gap-6 mb-8">
-      <div class="glass rounded-2xl p-6 text-center col-span-1">
-        <div class="text-6xl mb-3">🌍</div>
-        <h3 class="text-xl font-bold">Explorer</h3>
-        <div class="mt-4">
-          <div class="flex justify-between text-xs text-slate-400 mb-1"><span>XP Progress</span><span id="xp-text">0 / 500 XP</span></div>
-          <div class="xp-bar"><div id="xp-fill" class="xp-fill" style="width:0%"></div></div>
-        </div>
-        <div class="grid grid-cols-3 gap-3 mt-6">
-          <div class="glass rounded-lg p-3"><div class="text-xl font-black text-blue-400" id="pp-checkins">0</div><div class="text-xs text-slate-500">Check-ins</div></div>
-          <div class="glass rounded-lg p-3"><div class="text-xl font-black text-cyan-400" id="pp-xp">0</div><div class="text-xs text-slate-500">Total XP</div></div>
-          <div class="glass rounded-lg p-3"><div class="text-xl font-black text-green-400" id="pp-countries">0</div><div class="text-xs text-slate-500">Countries</div></div>
+  <div id="panel-passport" class="panel">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;margin-bottom:32px">
+      <div class="passport-card">
+        <div style="font-size:13px;font-weight:600;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Travel Passport</div>
+        <div style="font-size:32px;font-weight:800;font-family:'Syne',sans-serif" id="pp-level">Explorer</div>
+        <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+          <div><div style="font-size:24px;font-weight:800" id="pp-checkins">0</div><div style="font-size:11px;opacity:.6">Check-ins</div></div>
+          <div><div style="font-size:24px;font-weight:800" id="pp-xp">0</div><div style="font-size:11px;opacity:.6">Total XP</div></div>
+          <div><div style="font-size:24px;font-weight:800" id="pp-countries">0</div><div style="font-size:11px;opacity:.6">Countries</div></div>
         </div>
       </div>
-      <div class="glass rounded-2xl p-6 col-span-2">
-        <h3 class="font-bold mb-4 gradient-text"><i class="fas fa-medal mr-2"></i>Badges Collected</h3>
-        <div id="badges-grid" class="grid grid-cols-4 gap-3"></div>
+      <div style="background:#f8f9fa;border-radius:20px;padding:24px">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;font-family:'Syne',sans-serif">Badges Collected 🏅</h3>
+        <div class="badge-grid" id="badges-grid"></div>
       </div>
     </div>
-    <h3 class="font-bold mb-4 text-lg">Recent Adventures</h3>
-    <div id="passport-checkins" class="grid grid-cols-2 gap-4"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;font-family:'Syne',sans-serif">Recent Adventures</h3>
+    <div id="passport-feed" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
   </div>
 
-  <!-- EURO AI CHATBOT -->
-  <div id="panel-euro" class="hidden">
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold">🤖 EURO — AI Travel Guide</h2>
-      <p class="text-slate-400 text-sm">Your personal AI guide for Europe. Ask anything about destinations, tips, itineraries.</p>
-    </div>
-    <div class="glass rounded-2xl overflow-hidden" style="height:500px;display:flex;flex-direction:column">
-      <!-- Chat header -->
-      <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-lg">🤖</div>
-        <div><p class="font-bold">EURO</p><p class="text-xs text-green-400">● Online</p></div>
+  <div id="panel-euro" class="panel">
+    <div style="max-width:700px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="font-size:52px;margin-bottom:8px">🤖</div>
+        <h2 style="font-size:24px;font-weight:800;font-family:'Syne',sans-serif">EURO — Your AI Travel Guide</h2>
+        <p style="color:#888;font-size:15px;margin-top:6px">Ask anything about Europe — hidden gems, itineraries, food, culture.</p>
       </div>
-      <!-- Messages -->
-      <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-3">
-        <div class="chat-msg-ai">
-          <p class="text-sm">Ciao! I'm EURO, your AI guide for Europe! 🌍</p>
-          <p class="text-sm mt-1">Ask me anything: hidden gems, best itineraries, local tips, what to eat, visa requirements... I'm here to help!</p>
-          <p class="text-xs text-slate-400 mt-2">Try: "Best 3 days in Rome" or "Hidden gems in Portugal"</p>
+      <div class="chat-area" id="chat-area">
+        <div class="chat-bubble-ai">
+          Ciao! I'm EURO 🌍 Your personal AI guide for Europe! Ask me about hidden gems, the best itineraries, local food, or travel tips. Where are you heading?
         </div>
       </div>
-      <!-- Quick questions -->
-      <div class="px-5 py-3 border-t border-white/5 flex gap-2 overflow-x-auto">
-        <button onclick="quickAsk('Best hidden gems in Europe?')" class="text-xs bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-blue-500/30 transition-colors">💎 Hidden gems</button>
-        <button onclick="quickAsk('Best 3-day itinerary for Rome?')" class="text-xs bg-cyan-500/20 text-cyan-300 px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-cyan-500/30 transition-colors">🏛️ Rome 3 days</button>
-        <button onclick="quickAsk('Cheapest European cities to visit?')" class="text-xs bg-green-500/20 text-green-300 px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-green-500/30 transition-colors">💰 Budget travel</button>
-        <button onclick="quickAsk('Best food spots in Barcelona?')" class="text-xs bg-orange-500/20 text-orange-300 px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-orange-500/30 transition-colors">🍕 Barcelona food</button>
-        <button onclick="quickAsk('Best beaches in Greece?')" class="text-xs bg-blue-400/20 text-blue-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:bg-blue-400/30 transition-colors">🏖️ Greece beaches</button>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <button onclick="ask('Best hidden gems in Europe?')" style="background:#f0f5ff;border:1.5px solid #ccd9ff;color:#0d6efd;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:'Inter',sans-serif">💎 Hidden gems</button>
+        <button onclick="ask('Best 3-day itinerary for Rome?')" style="background:#f0f5ff;border:1.5px solid #ccd9ff;color:#0d6efd;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:'Inter',sans-serif">🏛️ Rome 3 days</button>
+        <button onclick="ask('Budget travel tips in Europe?')" style="background:#f0f5ff;border:1.5px solid #ccd9ff;color:#0d6efd;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:'Inter',sans-serif">💰 Budget tips</button>
+        <button onclick="ask('Best food cities in Europe?')" style="background:#f0f5ff;border:1.5px solid #ccd9ff;color:#0d6efd;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:'Inter',sans-serif">🍕 Food cities</button>
       </div>
-      <!-- Input -->
-      <div class="px-5 py-4 border-t border-white/10 flex gap-3">
-        <input id="chat-input" placeholder="Ask EURO anything about Europe..." onkeydown="if(event.key==='Enter')sendMessage()" class="flex-1">
-        <button onclick="sendMessage()" class="btn px-5"><i class="fas fa-paper-plane"></i></button>
+      <div style="display:flex;gap:10px">
+        <input id="chat-input" placeholder="Ask EURO anything about Europe..." onkeydown="if(event.key==='Enter')sendMsg()" style="flex:1">
+        <button class="btn-blue" style="padding:10px 20px" onclick="sendMsg()">Send ↑</button>
       </div>
     </div>
   </div>
 
 </div>
 
-<div id="toast" class="fixed bottom-6 right-6 px-6 py-3 rounded-xl font-semibold hidden z-50 text-white"></div>
-
 <script>
-const SUPABASE_URL='https://nmulrsbqdeqokvrybapn.supabase.co'
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdWxyc2JxZGVxb2t2cnliYXBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODY0NDcsImV4cCI6MjA5NDg2MjQ0N30.iGN_OGVkw0j3VCEi9qUroMbpT37P3UPRUf1cYyqFBys'
-const GROQ_KEY='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'
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)
+const SB=supabase.createClient('https://nmulrsbqdeqokvrybapn.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdWxyc2JxZGVxb2t2cnliYXBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODY0NDcsImV4cCI6MjA5NDg2MjQ0N30.iGN_OGVkw0j3VCEi9qUroMbpT37P3UPRUf1cYyqFBys')
+const GROQ='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'
+const chatHist=[{role:'system',content:'You are EURO, a friendly enthusiastic AI travel guide for Europe. Give specific, practical tips with local knowledge, hidden gems, and insider info. Use emojis naturally. Keep answers to 3-4 sentences.'}]
 
-const chatHistory=[{role:'system',content:'You are EURO, a friendly and enthusiastic AI travel guide for Europe. You give practical, specific tips with local knowledge. Mention hidden gems, best timing, local food. Keep answers concise but valuable (3-5 sentences max). Use emojis naturally.'}]
+function showTab(t){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(n=>n.classList.remove('active'));document.getElementById('panel-'+t).classList.add('active');document.getElementById('tab-'+t).classList.add('active');const fn={explore:loadDests,checkin:loadCheckins,passport:loadPassport};if(fn[t])fn[t]()}
+function toggleEl(id){const el=document.getElementById(id);el.classList.toggle('open')}
 
-function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className=`fixed bottom-6 right-6 px-6 py-3 rounded-xl font-semibold z-50 text-white ${type==='error'?'bg-red-600':'bg-blue-600'}`;setTimeout(()=>t.classList.add('hidden'),3000)}
-function showTab(tab){['explore','checkin','passport','euro'].forEach(t=>{document.getElementById(`panel-${t}`).classList.add('hidden');document.getElementById(`tab-${t}`).classList.remove('tab-active')});document.getElementById(`panel-${tab}`).classList.remove('hidden');document.getElementById(`tab-${tab}`).classList.add('tab-active');const loaders={explore:loadDestinations,checkin:loadCheckins,passport:loadPassport};if(loaders[tab])loaders[tab]()}
-function toggleForm(id){document.getElementById(id).classList.toggle('hidden')}
+const destBgs={'🏛️ Landmarks':'linear-gradient(135deg,#ffecd2,#fcb69f)','🌿 Nature':'linear-gradient(135deg,#a8edea,#fed6e3)','🍕 Food':'linear-gradient(135deg,#ffd89b,#19547b)','🎨 Art':'linear-gradient(135deg,#a18cd1,#fbc2eb)','🏖️ Beach':'linear-gradient(135deg,#a1c4fd,#c2e9fb)','💎 Hidden Gem':'linear-gradient(135deg,#d4fc79,#96e6a1)'}
 
-async function saveDestination(){
-  const d={name:document.getElementById('d-name').value,country:document.getElementById('d-country').value,category:document.getElementById('d-cat').value,difficulty:document.getElementById('d-diff').value,points_reward:parseInt(document.getElementById('d-xp').value)||50,description:document.getElementById('d-desc').value}
-  if(!d.name){showToast('Name required','error');return}
-  const{error}=await sb.from('te_destinations').insert(d)
-  if(error){showToast('Error: '+error.message,'error');return}
-  showToast('✅ Destination added!');toggleForm('dest-form');loadDestinations()
+async function seedData(){
+  const[{data:d1},{data:d2}]=await Promise.all([SB.from('te_destinations').select('id').limit(1),SB.from('te_checkins').select('id').limit(1)])
+  if(!d1?.length)await SB.from('te_destinations').insert([
+    {name:'Colosseum',country:'Italy',category:'🏛️ Landmarks',description:'Built in 70 AD, seats 50,000. Go early morning to avoid crowds.',points_reward:100,difficulty:'Easy',image_url:'🏛️'},
+    {name:'Cinque Terre',country:'Italy',category:'🌿 Nature',description:'Five colorful villages on the Italian Riviera. Best in May-June.',points_reward:150,difficulty:'Medium',image_url:'🌈'},
+    {name:'Santorini',country:'Greece',category:'🏖️ Beach',description:'Iconic white buildings and blue domes. Sunset from Oia is unmissable.',points_reward:200,difficulty:'Easy',image_url:'🏝️'},
+    {name:'Plitvice Lakes',country:'Croatia',category:'🌿 Nature',description:'Cascading turquoise lakes. Hidden gem of Eastern Europe.',points_reward:180,difficulty:'Medium',image_url:'💧'},
+    {name:'Alfama District',country:'Portugal',category:'💎 Hidden Gem',description:'Lisbon\'s oldest neighborhood. Fado music, steep streets, real life.',points_reward:75,difficulty:'Easy',image_url:'🎸'},
+    {name:'La Sagrada Família',country:'Spain',category:'🏛️ Landmarks',description:'Gaudí\'s unfinished masterpiece. Book tickets 2 months in advance.',points_reward:120,difficulty:'Easy',image_url:'⛪'},
+  ])
+  if(!d2?.length)await SB.from('te_checkins').insert([
+    {destination:'Colosseum',country:'Italy',caption:'Absolutely mindblowing. The history hits different in person!',rating:5,points:100,badge:'🏛️ Heritage Explorer'},
+    {destination:'Cinque Terre',country:'Italy',caption:'Hiked all 5 villages. Legs destroyed but worth every step 💪',rating:5,points:150,badge:'🏔️ Mountain Conqueror'},
+    {destination:'Alfama District',country:'Portugal',caption:'Got lost on purpose. Found the best local restaurant by accident',rating:5,points:75,badge:'💎 Gem Hunter'},
+  ])
 }
 
-async function generateDestination(){
-  const name=document.getElementById('d-name').value,country=document.getElementById('d-country').value
-  if(!name){showToast('Enter a destination name first','error');return}
-  try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:200,messages:[{role:'user',content:`Write a compelling 2-sentence travel description for "${name}"${country?' in '+country:''}. Include what makes it special, best time to visit, and one insider tip. Be engaging and informative.`}]})})
-    const data=await res.json()
-    document.getElementById('d-desc').value=data.choices?.[0]?.message?.content||''
-    showToast('✅ AI description generated!')
-  }catch(e){showToast('AI error: '+e.message,'error')}
+async function loadDests(){
+  const cat=document.getElementById('filter-cat').value
+  let q=SB.from('te_destinations').select('*').order('points_reward',{ascending:false})
+  if(cat)q=q.eq('category',cat)
+  const{data}=await q
+  document.getElementById('dests-grid').innerHTML=(data||[]).map(d=>`
+    <div class="dest-card">
+      <div class="dest-thumb" style="background:${destBgs[d.category]||'linear-gradient(135deg,#667eea,#764ba2)'}">
+        <div style="font-size:72px">${d.image_url||'📍'}</div>
+        <div class="xp-chip">+${d.points_reward} XP</div>
+      </div>
+      <div class="dest-body">
+        <div style="font-weight:700;font-size:16px">${d.name}</div>
+        <div style="font-size:12px;color:#888;margin:4px 0 8px">${d.country} · ${d.category} · ${d.difficulty}</div>
+        <p style="font-size:13px;color:#555;line-height:1.5">${(d.description||'').substring(0,80)}...</p>
+      </div>
+    </div>`).join('')
+}
+
+async function saveDest(){
+  const d={name:document.getElementById('d-name').value,country:document.getElementById('d-country').value,category:document.getElementById('d-cat').value,points_reward:parseInt(document.getElementById('d-xp').value)||50,difficulty:document.getElementById('d-diff').value,description:document.getElementById('d-desc').value,image_url:document.getElementById('d-emoji').value||'📍'}
+  if(!d.name)return
+  await SB.from('te_destinations').insert(d);toggleEl('dest-form');loadDests()
 }
 
 async function saveCheckin(){
-  const d={destination:document.getElementById('ci-dest').value,country:document.getElementById('ci-country').value,caption:document.getElementById('ci-caption').value,rating:parseInt(document.getElementById('ci-rating').value)||5,points:parseInt(document.getElementById('ci-xp').value)||10,badge:document.getElementById('ci-badge').value||null}
-  if(!d.destination){showToast('Enter destination','error');return}
-  const{error}=await sb.from('te_checkins').insert(d)
-  if(error){showToast('Error: '+error.message,'error');return}
-  showToast(`🎉 Checked in! +${d.points} XP earned!`);toggleForm('checkin-form');loadCheckins()
-}
-
-async function loadDestinations(){
-  const country=document.getElementById('filter-country').value,cat=document.getElementById('filter-cat').value
-  let q=sb.from('te_destinations').select('*').order('created_at',{ascending:false})
-  if(country)q=q.eq('country',country)
-  if(cat)q=q.eq('category',cat)
-  const{data}=await q
-  const grid=document.getElementById('destinations-grid')
-  if(!data?.length){
-    grid.innerHTML='<div class="col-span-3 glass rounded-xl p-8 text-center text-slate-400"><span class="text-4xl block mb-3">🗺️</span>No destinations yet — add the first one!</div>'
-    return
-  }
-  const catEmoji={'Architecture & Landmarks':'🏛️','Nature & Outdoors':'🌿','Food & Culture':'🍕','Art & Museums':'🎨','Beaches & Coasts':'🏖️','Nightlife':'🌃','Hidden Gem':'💎'}
-  grid.innerHTML=data.map(d=>`<div class="dest-card"><div class="flex justify-between items-start mb-3"><div><h3 class="font-bold text-lg">${d.name}</h3><p class="text-sm text-blue-400">${catEmoji[d.category]||'📍'} ${d.category}</p></div><div class="flex items-center gap-2"><span class="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">+${d.points_reward} XP</span><button onclick="deleteRec('te_destinations','${d.id}',loadDestinations)" class="text-slate-600 hover:text-red-400"><i class="fas fa-trash text-sm"></i></button></div></div><div class="flex gap-3 text-xs text-slate-400 mb-3"><span><i class="fas fa-flag mr-1 text-blue-400"></i>${d.country||'Europe'}</span><span><i class="fas fa-signal mr-1"></i>${d.difficulty}</span></div>${d.description?`<p class="text-sm text-slate-400">${d.description.substring(0,120)}${d.description.length>120?'...':''}</p>`:''}</div>`).join('')
+  const d={destination:document.getElementById('ci-dest').value,country:document.getElementById('ci-country').value,rating:parseInt(document.getElementById('ci-rating').value),xp:parseInt(document.getElementById('ci-xp').value),badge:document.getElementById('ci-badge').value||null,caption:document.getElementById('ci-caption').value,points:parseInt(document.getElementById('ci-xp').value)||10}
+  if(!d.destination)return
+  await SB.from('te_checkins').insert(d);toggleEl('ci-form');loadCheckins()
 }
 
 async function loadCheckins(){
-  const{data}=await sb.from('te_checkins').select('*').order('created_at',{ascending:false})
-  const list=document.getElementById('checkins-list')
-  if(!data?.length){list.innerHTML='<div class="glass rounded-xl p-8 text-center text-slate-400"><span class="text-4xl block mb-3">📍</span>No check-ins yet — start your adventure!</div>';return}
-  list.innerHTML=data.map(c=>`<div class="checkin-card"><div class="flex justify-between items-start mb-2"><div><h3 class="font-bold">${c.destination}</h3><div class="flex items-center gap-2 mt-0.5"><span class="text-xs text-slate-400">${c.country||''}</span>${c.badge?`<span class="text-sm">${c.badge}</span>`:''}</div></div><div class="flex items-center gap-2"><span class="text-xs font-bold text-green-400">+${c.points} XP</span><span class="text-sm">${'⭐'.repeat(c.rating||5)}</span><button onclick="deleteRec('te_checkins','${c.id}',loadCheckins)" class="text-slate-600 hover:text-red-400"><i class="fas fa-trash text-sm"></i></button></div></div>${c.caption?`<p class="text-sm text-slate-400 italic">"${c.caption}"</p>`:''}<p class="text-xs text-slate-600 mt-2">${new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</p></div>`).join('')
+  const{data}=await SB.from('te_checkins').select('*').order('created_at',{ascending:false})
+  const emojis={'Italy':'🇮🇹','France':'🇫🇷','Spain':'🇪🇸','Greece':'🇬🇷','Portugal':'🇵🇹','Croatia':'🇭🇷','Germany':'🇩🇪'}
+  document.getElementById('checkins-feed').innerHTML=(data||[]).map(c=>`
+    <div class="checkin-item">
+      <div class="checkin-emoji">${emojis[c.country]||'📍'}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div><div style="font-weight:700;font-size:15px">${c.destination}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px">${c.country||''} ${c.badge?'· '+c.badge:''}</div></div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:#0d6efd;font-size:14px">+${c.points} XP</div>
+            <div style="font-size:12px;color:#888">${'⭐'.repeat(c.rating||5)}</div>
+          </div>
+        </div>
+        ${c.caption?`<p style="font-size:13px;color:#555;margin-top:8px;line-height:1.5;font-style:italic">"${c.caption}"</p>`:''}
+      </div>
+    </div>`).join('')
 }
 
 async function loadPassport(){
-  const{data}=await sb.from('te_checkins').select('*').order('created_at',{ascending:false})
-  if(!data?.length){document.getElementById('badges-grid').innerHTML='<p class="col-span-4 text-slate-500 text-sm">Check in to destinations to earn badges!</p>';return}
-  const totalXP=data.reduce((s,c)=>s+(c.points||0),0)
-  const countries=[...new Set(data.map(c=>c.country).filter(Boolean))].length
-  const badges=[...new Set(data.map(c=>c.badge).filter(Boolean))]
-  document.getElementById('pp-checkins').textContent=data.length
+  const{data}=await SB.from('te_checkins').select('*')
+  const totalXP=(data||[]).reduce((s,c)=>s+(c.points||0),0)
+  const countries=[...new Set((data||[]).map(c=>c.country).filter(Boolean))].length
+  const badges=[...new Set((data||[]).map(c=>c.badge).filter(Boolean))]
+  const levels=[{min:0,name:'Backpacker'},{min:100,name:'Explorer'},{min:300,name:'Adventurer'},{min:600,name:'Traveler'},{min:1000,name:'Nomad'},{min:2000,name:'Legend'}]
+  const level=levels.filter(l=>totalXP>=l.min).pop()?.name||'Backpacker'
+  document.getElementById('pp-checkins').textContent=data?.length||0
   document.getElementById('pp-xp').textContent=totalXP
   document.getElementById('pp-countries').textContent=countries
-  document.getElementById('xp-text').textContent=`${totalXP} / ${Math.ceil(totalXP/500)*500} XP`
-  document.getElementById('xp-fill').style.width=Math.min(100,(totalXP%500)/5)+'%'
-  document.getElementById('badges-grid').innerHTML=badges.length?badges.map(b=>`<div class="badge"><div class="text-2xl">${b.split(' ')[0]}</div><div class="text-xs mt-1 text-slate-300">${b.split(' ').slice(1).join(' ')}</div></div>`).join(''):'<p class="col-span-4 text-slate-500 text-sm">No badges yet!</p>'
-  document.getElementById('passport-checkins').innerHTML=data.slice(0,6).map(c=>`<div class="checkin-card"><div class="flex justify-between"><div><h4 class="font-medium">${c.destination}</h4><p class="text-xs text-slate-400">${c.country||''}</p></div><span class="text-xs font-bold text-green-400">+${c.points} XP</span></div>${c.caption?`<p class="text-xs text-slate-500 mt-1 italic">"${c.caption.substring(0,60)}..."</p>`:''}</div>`).join('')
+  document.getElementById('pp-level').textContent=level
+  document.getElementById('hero-xp').textContent=totalXP
+  document.getElementById('hero-xp-bar').style.width=Math.min(100,(totalXP%500)/5)+'%'
+  const allBadges=['🏛️ Heritage Explorer','🏖️ Beach Hopper','🍕 Food Tourist','💎 Gem Hunter','🏔️ Mountain Conqueror','🌃 Night Owl','🗺️ Map Collector','🌊 Sea Lover']
+  document.getElementById('badges-grid').innerHTML=allBadges.map(b=>`<div class="badge-item ${badges.includes(b)?'earned':''}"><div style="font-size:24px">${b.split(' ')[0]}</div><div style="font-size:11px;color:#555;margin-top:4px;font-weight:600">${b.split(' ').slice(1).join(' ')}</div>${badges.includes(b)?'<div style="font-size:10px;color:#f59e0b;font-weight:700;margin-top:3px">EARNED ✓</div>':''}</div>`).join('')
+  const{data:recent}=await SB.from('te_checkins').select('*').order('created_at',{ascending:false}).limit(4)
+  document.getElementById('passport-feed').innerHTML=(recent||[]).map(c=>`<div style="background:#f8f9fa;border-radius:12px;padding:16px"><div style="font-weight:600">${c.destination}</div><div style="font-size:12px;color:#888;margin-top:2px">${c.country||''} · +${c.points} XP</div>${c.caption?`<p style="font-size:12px;color:#666;margin-top:6px;font-style:italic">"${c.caption.substring(0,60)}..."</p>`:''}</div>`).join('')
 }
 
-// EURO Chatbot
-function appendMessage(text,isUser){
-  const div=document.createElement('div')
-  div.className=isUser?'chat-msg-user':'chat-msg-ai'
-  div.innerHTML=`<p class="text-sm">${text.replace(/\n/g,'<br>')}</p>`
-  document.getElementById('chat-messages').appendChild(div)
-  document.getElementById('chat-messages').scrollTop=9999
+// EURO chatbot
+async function ask(q){document.getElementById('chat-input').value=q;sendMsg()}
+async function sendMsg(){
+  const input=document.getElementById('chat-input'),txt=input.value.trim()
+  if(!txt)return;input.value=''
+  const area=document.getElementById('chat-area')
+  area.innerHTML+=`<div class="chat-bubble-user">${txt}</div>`
+  chatHist.push({role:'user',content:txt})
+  area.innerHTML+=`<div class="chat-bubble-ai" id="thinking">...</div>`
+  area.scrollTop=9999
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:250,messages:chatHist})})
+  const d=await res.json()
+  const reply=d.choices?.[0]?.message?.content||'Sorry!'
+  chatHist.push({role:'assistant',content:reply})
+  document.getElementById('thinking').remove()
+  area.innerHTML+=`<div class="chat-bubble-ai">${reply.replace(/\n/g,'<br>')}</div>`
+  area.scrollTop=9999
 }
 
-async function sendMessage(){
-  const input=document.getElementById('chat-input')
-  const text=input.value.trim()
-  if(!text)return
-  input.value=''
-  appendMessage(text,true)
-  chatHistory.push({role:'user',content:text})
-  const thinking=document.createElement('div')
-  thinking.className='chat-msg-ai'
-  thinking.innerHTML='<p class="text-sm text-blue-400 animate-pulse">EURO is thinking...</p>'
-  document.getElementById('chat-messages').appendChild(thinking)
-  document.getElementById('chat-messages').scrollTop=9999
-  try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:300,messages:chatHistory})})
-    const data=await res.json()
-    const reply=data.choices?.[0]?.message?.content||'Sorry, I had a connection issue!'
-    chatHistory.push({role:'assistant',content:reply})
-    thinking.remove()
-    appendMessage(reply,false)
-  }catch(e){thinking.remove();appendMessage('Sorry, connection error: '+e.message,false)}
-}
-
-function quickAsk(q){document.getElementById('chat-input').value=q;sendMessage()}
-
-async function deleteRec(table,id,reload){if(!confirm('Delete?'))return;await sb.from(table).delete().eq('id',id);reload()}
-
-loadDestinations()
+async function init(){await seedData();loadDests()}
+init()
 </script>
 </body>
 </html>
